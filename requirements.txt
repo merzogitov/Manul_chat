@@ -1,0 +1,4 @@
+fastapi
+uvicorn[standard]
+pwdlib[argon2]
+python-multipart

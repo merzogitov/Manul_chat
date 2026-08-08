@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover"
+    >
+    <title>Манул Чат — администратор</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+<div class="topbar">
+    <strong>
+        Манул Чат — администратор
+    </strong>
+
+    <button onclick="logout()">
+        Выйти
+    </button>
+</div>
+
+<div class="container">
+    <div class="admin-card">
+        <h2>
+            Создать пользователя
+        </h2>
+
+        <input
+            id="username"
+            placeholder="Логин"
+        >
+
+        <input
+            id="displayName"
+            placeholder="Имя"
+        >
+
+        <input
+            id="password"
+            type="password"
+            placeholder="Пароль"
+        >
+
+        <button onclick="createUser()">
+            Создать
+        </button>
+
+        <div
+            id="createError"
+            class="error"
+        ></div>
+    </div>
+
+    <div class="admin-card">
+        <h2>
+            Пользователи
+        </h2>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Логин</th>
+                        <th>Имя</th>
+                        <th>Онлайн</th>
+                        <th>Статус</th>
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <tbody id="usersTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <h2>
+            Просмотр переписки
+        </h2>
+
+        <select id="user1"></select>
+        <select id="user2"></select>
+
+        <button onclick="loadConversation()">
+            Открыть
+        </button>
+
+        <div
+            id="adminMessages"
+            class="admin-messages"
+        ></div>
+    </div>
+</div>
+
+<script>
+let users = [];
+
+async function init() {
+    const response =
+        await fetch("/api/me");
+
+    if (!response.ok) {
+        location.href = "/login";
+        return;
+    }
+
+    const me =
+        await response.json();
+
+    if (!me.is_admin) {
+        location.href = "/chat";
+        return;
+    }
+
+    await loadUsers();
+}
+
+async function loadUsers() {
+    const response =
+        await fetch("/api/admin/users");
+
+    users =
+        await response.json();
+
+    drawUsers();
+    fillSelects();
+}
+
+function drawUsers() {
+    const tbody =
+        document.getElementById(
+            "usersTable"
+        );
+
+    tbody.innerHTML = "";
+
+    for (const user of users) {
+        const tr =
+            document.createElement("tr");
+
+        addCell(
+            tr,
+            user.username
+        );
+
+        addCell(
+            tr,
+            user.display_name
+        );
+
+        addCell(
+            tr,
+            user.online
+                ? "● онлайн"
+                : "○ офлайн"
+        );
+
+        addCell(
+            tr,
+            user.is_active
+                ? "Активен"
+                : "Заблокирован"
+        );
+
+        const actions =
+            document.createElement("td");
+
+        const toggle =
+            document.createElement("button");
+
+        toggle.textContent =
+            user.is_active
+                ? "Заблокировать"
+                : "Разблокировать";
+
+        toggle.onclick = () =>
+            toggleUser(user.id);
+
+        const password =
+            document.createElement("button");
+
+        password.textContent =
+            "Новый пароль";
+
+        password.onclick = () =>
+            resetPassword(user.id);
+
+        actions.appendChild(toggle);
+        actions.appendChild(password);
+
+        tr.appendChild(actions);
+        tbody.appendChild(tr);
+    }
+}
+
+function addCell(tr, value) {
+    const td =
+        document.createElement("td");
+
+    td.textContent = value;
+    tr.appendChild(td);
+}
+
+async function createUser() {
+    const username =
+        document
+            .getElementById("username")
+            .value;
+
+    const display_name =
+        document
+            .getElementById("displayName")
+            .value;
+
+    const password =
+        document
+            .getElementById("password")
+            .value;
+
+    const response =
+        await fetch(
+            "/api/admin/users",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                body: JSON.stringify({
+                    username,
+                    display_name,
+                    password
+                })
+            }
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+        document
+            .getElementById(
+                "createError"
+            )
+            .textContent =
+                data.detail;
+
+        return;
+    }
+
+    document
+        .getElementById(
+            "createError"
+        )
+        .textContent = "";
+
+    document.getElementById(
+        "username"
+    ).value = "";
+
+    document.getElementById(
+        "displayName"
+    ).value = "";
+
+    document.getElementById(
+        "password"
+    ).value = "";
+
+    await loadUsers();
+}
+
+async function toggleUser(id) {
+    await fetch(
+        `/api/admin/users/${id}/toggle`,
+        {
+            method: "POST"
+        }
+    );
+
+    await loadUsers();
+}
+
+async function resetPassword(id) {
+    const password =
+        prompt(
+            "Введите новый пароль (минимум 8 символов)"
+        );
+
+    if (!password)
+        return;
+
+    const response =
+        await fetch(
+            `/api/admin/users/${id}/password`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                body: JSON.stringify({
+                    password
+                })
+            }
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+        alert(
+            data.detail
+            || "Ошибка"
+        );
+
+        return;
+    }
+
+    alert(
+        "Пароль изменён"
+    );
+}
+
+function fillSelects() {
+    const user1 =
+        document.getElementById(
+            "user1"
+        );
+
+    const user2 =
+        document.getElementById(
+            "user2"
+        );
+
+    user1.innerHTML = "";
+    user2.innerHTML = "";
+
+    for (const user of users) {
+        for (
+            const select
+            of [user1, user2]
+        ) {
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value =
+                user.id;
+
+            option.textContent =
+                user.display_name
+                + " ("
+                + user.username
+                + ")";
+
+            select.appendChild(
+                option
+            );
+        }
+    }
+
+    if (users.length > 1) {
+        user2.selectedIndex = 1;
+    }
+}
+
+async function loadConversation() {
+    const user1 =
+        document
+            .getElementById("user1")
+            .value;
+
+    const user2 =
+        document
+            .getElementById("user2")
+            .value;
+
+    if (user1 === user2) {
+        alert(
+            "Выберите двух разных пользователей"
+        );
+
+        return;
+    }
+
+    const response =
+        await fetch(
+            `/api/admin/messages/${user1}/${user2}`
+        );
+
+    const messages =
+        await response.json();
+
+    const panel =
+        document.getElementById(
+            "adminMessages"
+        );
+
+    panel.innerHTML = "";
+
+    if (!messages.length) {
+        panel.textContent =
+            "Сообщений пока нет";
+
+        return;
+    }
+
+    for (const message of messages) {
+        const div =
+            document.createElement(
+                "div"
+            );
+
+        div.className =
+            "admin-message";
+
+        const name =
+            document.createElement(
+                "strong"
+            );
+
+        name.textContent =
+            message.sender_name;
+
+        const text =
+            document.createElement(
+                "div"
+            );
+
+        text.textContent =
+            message.text || "";
+
+        div.appendChild(name);
+
+        if (message.reply) {
+            const quote =
+                document.createElement("div");
+
+            quote.className =
+                "reply-quote admin-reply-quote";
+
+            const quoteName =
+                document.createElement("div");
+
+            quoteName.className =
+                "reply-quote-name";
+
+            quoteName.textContent =
+                message.reply.sender_name;
+
+            const quoteText =
+                document.createElement("div");
+
+            quoteText.className =
+                "reply-quote-text";
+
+            if (message.reply.text) {
+                quoteText.textContent =
+                    message.reply.text;
+            } else if (message.reply.has_image) {
+                quoteText.textContent =
+                    "🖼 "
+                    + (
+                        message.reply.attachment_name
+                        || "Изображение"
+                    );
+            } else {
+                quoteText.textContent =
+                    "Сообщение";
+            }
+
+            quote.appendChild(
+                quoteName
+            );
+
+            quote.appendChild(
+                quoteText
+            );
+
+            div.appendChild(
+                quote
+            );
+        }
+
+        if (message.text) {
+            div.appendChild(text);
+        }
+
+        if (
+            message.attachment
+            &&
+            message.attachment.is_image
+        ) {
+            const link =
+                document.createElement("a");
+
+            link.href =
+                message.attachment.url;
+
+            link.target =
+                "_blank";
+
+            const img =
+                document.createElement("img");
+
+            img.src =
+                message.attachment.url;
+
+            img.className =
+                "admin-chat-image";
+
+            img.alt =
+                message.attachment.original_name;
+
+            link.appendChild(img);
+            div.appendChild(link);
+        }
+
+        const time =
+            document.createElement(
+                "small"
+            );
+
+        time.textContent =
+            new Date(
+                message.created_at
+            ).toLocaleString();
+
+        div.appendChild(time);
+        panel.appendChild(div);
+    }
+}
+
+async function logout() {
+    await fetch(
+        "/api/logout",
+        {
+            method: "POST"
+        }
+    );
+
+    location.href =
+        "/login";
+}
+
+init();
+</script>
+
+</body>
+</html>

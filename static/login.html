@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover"
+    >
+    <title>Манул Чат — вход</title>
+    <link rel="icon" type="image/png" href="/static/image/logo_min.png">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="login-box">
+                <img
+            src="/static/image/logo_max.png"
+            alt="Манул Чат"
+            class="login-logo"
+        >
+
+
+        <input
+            id="username"
+            placeholder="Логин"
+            autocomplete="username"
+        >
+
+        <input
+            id="password"
+            type="password"
+            placeholder="Пароль"
+            autocomplete="current-password"
+        >
+
+        <button onclick="login()">
+            Войти
+        </button>
+
+        <div
+            id="error"
+            class="error"
+        ></div>
+    </div>
+
+    <script>
+        async function login() {
+            const username =
+                document.getElementById("username").value;
+
+            const password =
+                document.getElementById("password").value;
+
+            const response =
+                await fetch("/api/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        username,
+                        password
+                    })
+                });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                document.getElementById("error")
+                    .textContent =
+                        data.detail || "Ошибка входа";
+                return;
+            }
+
+            location.href =
+                data.is_admin
+                    ? "/admin"
+                    : "/chat";
+        }
+
+        document
+            .getElementById("password")
+            .addEventListener(
+                "keydown",
+                event => {
+                    if (event.key === "Enter") {
+                        login();
+                    }
+                }
+            );
+    </script>
+</body>
+</html>

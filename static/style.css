@@ -1,0 +1,1215 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+    font-family: Arial, sans-serif;
+    background: #f3f4f6;
+    color: #222;
+}
+
+button,
+input,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: default;
+    opacity: .5;
+}
+
+.topbar {
+    height: 60px;
+    background: white;
+    border-bottom: 1px solid #ddd;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 20px;
+}
+
+.topbar-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 20px auto;
+    padding: 0 12px;
+}
+
+.login-box {
+    width: 360px;
+    max-width: calc(100% - 30px);
+
+    margin: 100px auto;
+    padding: 30px;
+
+    background: white;
+    border-radius: 10px;
+
+    box-shadow:
+        0 3px 15px rgba(0,0,0,.1);
+}
+
+.login-box input {
+    width: 100%;
+    padding: 12px;
+
+    margin-bottom: 12px;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.login-box button {
+    width: 100%;
+    padding: 12px;
+}
+
+.error {
+    color: #b00020;
+    margin-top: 12px;
+}
+
+
+/* ============================================================
+   CHAT
+   ============================================================ */
+
+.chat-layout {
+    height: calc(100vh - 60px);
+
+    display: grid;
+    grid-template-columns:
+        300px 1fr;
+}
+
+.users-panel {
+    background: white;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+}
+
+.user-item {
+    padding: 15px;
+
+    border-bottom: 1px solid #eee;
+
+    cursor: pointer;
+}
+
+.user-item:hover {
+    background: #f4f4f4;
+}
+
+.user-item.active {
+    background: #e8eef8;
+}
+
+.user-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.online {
+    color: green;
+}
+
+.offline {
+    color: #888;
+}
+
+.badge {
+    background: #3578e5;
+    color: white;
+
+    border-radius: 20px;
+
+    padding: 2px 8px;
+
+    font-size: 12px;
+}
+
+.chat-panel {
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
+}
+
+.chat-header {
+    background: white;
+
+    padding: 15px 20px;
+
+    border-bottom: 1px solid #ddd;
+}
+
+.peer-status {
+    font-size: 12px;
+
+    margin-top: 3px;
+
+    color: #777;
+}
+
+
+.chat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chat-header-person {
+    min-width: 0;
+    flex: 1;
+}
+
+.clear-chat-button {
+    margin-left: auto;
+    border: 1px solid #d0d0d0;
+    background: white;
+    border-radius: 7px;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.clear-chat-button:hover:not(:disabled) {
+    background: #f3f3f3;
+}
+
+.messages {
+    flex: 1;
+    min-height: 0;
+
+    padding: 20px;
+
+    overflow-y: auto;
+}
+
+.empty-chat {
+    color: #888;
+    text-align: center;
+    margin-top: 40px;
+}
+
+.message {
+    max-width: 70%;
+
+    margin-bottom: 12px;
+
+    padding: 10px 14px;
+
+    background: white;
+
+    border-radius: 10px;
+}
+
+.message.mine {
+    margin-left: auto;
+    background: #dcecff;
+}
+
+.message-name {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.message-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.message-time {
+    margin-top: 5px;
+
+    font-size: 11px;
+    color: #777;
+}
+
+.message-form {
+    display: flex;
+
+    padding: 15px;
+
+    gap: 10px;
+
+    background: white;
+
+    border-top: 1px solid #ddd;
+}
+
+.message-form input {
+    flex: 1;
+
+    padding: 12px;
+
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.message-input {
+    min-width: 0;
+}
+
+.attach-button,
+.send-button {
+    border: 0;
+
+    border-radius: 8px;
+
+    min-width: 46px;
+
+    font-size: 20px;
+}
+
+.attach-button {
+    background: #eee;
+}
+
+.send-button {
+    background: #3578e5;
+    color: white;
+}
+
+.upload-status {
+    font-size: 12px;
+
+    padding: 0 15px 5px;
+
+    background: white;
+}
+
+
+/* ============================================================
+   Изображения
+   ============================================================ */
+
+.chat-image {
+    display: block;
+
+    max-width: 420px;
+    max-height: 420px;
+
+    width: auto;
+    height: auto;
+
+    object-fit: contain;
+
+    border-radius: 10px;
+
+    margin-top: 8px;
+
+    cursor: pointer;
+}
+
+.attachment-name {
+    margin-top: 5px;
+
+    font-size: 12px;
+
+    opacity: .7;
+
+    overflow-wrap: anywhere;
+}
+
+
+/* ============================================================
+   ADMIN
+   ============================================================ */
+
+.admin-card {
+    background: white;
+
+    padding: 20px;
+
+    margin-bottom: 20px;
+
+    border-radius: 8px;
+}
+
+.admin-card input,
+.admin-card select {
+    padding: 9px;
+    margin: 4px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 10px;
+
+    border-bottom: 1px solid #ddd;
+
+    text-align: left;
+}
+
+td button {
+    margin: 2px;
+}
+
+.admin-messages {
+    padding: 15px;
+
+    background: #f4f4f4;
+
+    min-height: 200px;
+
+    max-height: 500px;
+
+    overflow-y: auto;
+
+    margin-top: 15px;
+}
+
+.admin-message {
+    background: white;
+
+    padding: 10px;
+
+    margin-bottom: 8px;
+
+    border-radius: 6px;
+}
+
+.admin-message small {
+    display: block;
+    margin-top: 6px;
+    color: #777;
+}
+
+.admin-chat-image {
+    display: block;
+    max-width: 320px;
+    max-height: 320px;
+    margin-top: 8px;
+    border-radius: 8px;
+}
+
+
+/* ============================================================
+   Мобильные элементы
+   ============================================================ */
+
+.mobile-back {
+    display: none;
+}
+
+.mobile-list-title {
+    display: none;
+}
+
+
+/* ============================================================
+   PHONE
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+    }
+
+    body.chat-body {
+        overflow: hidden;
+        height: 100dvh;
+    }
+
+    .topbar {
+        height: 54px;
+
+        padding-left: 12px;
+        padding-right: 12px;
+
+        flex-shrink: 0;
+    }
+
+    .topbar-user span {
+        display: none;
+    }
+
+    .topbar button {
+        padding: 7px 10px;
+    }
+
+    .chat-layout {
+        position: relative;
+
+        display: block;
+
+        height:
+            calc(
+                100dvh - 54px
+            );
+
+        overflow: hidden;
+    }
+
+    .users-panel {
+        position: absolute;
+
+        inset: 0;
+
+        width: 100%;
+
+        border: 0;
+
+        background: white;
+
+        overflow-y: auto;
+
+        z-index: 2;
+    }
+
+    .mobile-list-title {
+        display: block;
+
+        padding: 16px;
+
+        font-size: 20px;
+        font-weight: bold;
+
+        border-bottom:
+            1px solid #ddd;
+    }
+
+    .user-item {
+        min-height: 68px;
+
+        padding:
+            13px 16px;
+
+        display: flex;
+
+        flex-direction: column;
+
+        justify-content: center;
+    }
+
+    .user-item strong {
+        font-size: 17px;
+    }
+
+    .user-item .online,
+    .user-item .offline {
+        margin-top: 4px;
+
+        font-size: 13px;
+    }
+
+    .chat-panel {
+        position: absolute;
+
+        inset: 0;
+
+        display: flex;
+
+        width: 100%;
+        height: 100%;
+
+        background: #f3f4f6;
+
+        transform:
+            translateX(100%);
+
+        transition:
+            transform .18s ease;
+
+        z-index: 3;
+    }
+
+    body.mobile-chat-open
+    .chat-panel {
+        transform:
+            translateX(0);
+    }
+
+    .chat-header {
+        min-height: 58px;
+
+        padding: 8px 10px;
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 8px;
+
+        flex-shrink: 0;
+    }
+
+
+    .chat-header-person {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .clear-chat-button {
+        margin-left: auto;
+        padding: 7px 9px;
+        max-width: 92px;
+        font-size: 11px;
+        line-height: 1.15;
+    }
+
+    .mobile-back {
+        display: block;
+
+        width: 42px;
+        height: 42px;
+
+        border: 0;
+
+        background: transparent;
+
+        font-size: 26px;
+    }
+
+    #peerName {
+        font-size: 16px;
+    }
+
+    .messages {
+        flex: 1;
+
+        min-height: 0;
+
+        padding: 12px;
+
+        overflow-y: auto;
+
+        -webkit-overflow-scrolling:
+            touch;
+    }
+
+    .message {
+        max-width: 86%;
+
+        padding:
+            8px 11px;
+
+        margin-bottom: 8px;
+    }
+
+    .message-name {
+        font-size: 11px;
+    }
+
+    .message-time {
+        font-size: 10px;
+    }
+
+    .chat-image {
+        max-width:
+            min(
+                70vw,
+                320px
+            );
+
+        max-height:
+            45vh;
+
+        border-radius: 8px;
+    }
+
+    .message-form {
+        flex-shrink: 0;
+
+        padding:
+            8px
+            8px
+            calc(
+                8px
+                +
+                env(
+                    safe-area-inset-bottom
+                )
+            );
+
+        gap: 6px;
+    }
+
+    .message-form input {
+        padding: 11px;
+
+        /* не даёт iPhone увеличивать страницу */
+        font-size: 16px;
+    }
+
+    .attach-button,
+    .send-button {
+        min-width: 44px;
+        width: 44px;
+
+        padding: 0;
+    }
+
+    .upload-status {
+        flex-shrink: 0;
+    }
+
+    .login-box {
+        margin-top: 50px;
+    }
+
+    .admin-card {
+        padding: 14px;
+    }
+
+    .admin-card input,
+    .admin-card select {
+        width: 100%;
+        margin: 4px 0;
+        font-size: 16px;
+    }
+
+    .admin-card > button {
+        margin-top: 6px;
+    }
+
+    .admin-chat-image {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+
+/* ============================================================
+   Ответы на сообщения
+   ============================================================ */
+
+.message-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.message-wrap .message {
+    margin-bottom: 0;
+}
+
+.mine-wrap {
+    justify-content: flex-end;
+}
+
+.reply-message-button {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+
+    border: 0;
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.9);
+
+    font-size: 18px;
+    line-height: 1;
+
+    opacity: 0;
+
+    transition:
+        opacity .12s ease,
+        background .12s ease;
+}
+
+.message-wrap:hover
+.reply-message-button {
+    opacity: 1;
+}
+
+.reply-message-button:hover {
+    background: #e8eef8;
+}
+
+.reply-quote {
+    margin: 4px 0 8px;
+
+    padding: 6px 8px;
+
+    border-left: 3px solid #3578e5;
+
+    background:
+        rgba(0,0,0,.045);
+
+    border-radius: 5px;
+
+    max-width: 100%;
+}
+
+.reply-quote-name {
+    font-size: 11px;
+    font-weight: bold;
+
+    margin-bottom: 2px;
+}
+
+.reply-quote-text {
+    font-size: 12px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reply-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 8px 15px;
+
+    background: white;
+
+    border-top: 1px solid #ddd;
+    border-left: 3px solid #3578e5;
+}
+
+.reply-bar[hidden] {
+    display: none;
+}
+
+.reply-bar-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.reply-bar-content strong {
+    display: block;
+
+    font-size: 12px;
+
+    margin-bottom: 2px;
+}
+
+#replyBarText {
+    font-size: 12px;
+
+    color: #666;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reply-cancel-button {
+    width: 32px;
+    height: 32px;
+
+    border: 0;
+    background: transparent;
+
+    font-size: 18px;
+}
+
+.admin-reply-quote {
+    max-width: 600px;
+}
+
+
+@media (max-width: 700px) {
+
+    .message-wrap {
+        gap: 3px;
+        margin-bottom: 8px;
+    }
+
+    .message-wrap .message {
+        max-width: calc(86% - 28px);
+    }
+
+    .reply-message-button {
+        width: 28px;
+        height: 28px;
+        flex-basis: 28px;
+
+        font-size: 16px;
+
+        /* На телефоне кнопка всегда доступна. */
+        opacity: .72;
+    }
+
+    .reply-bar {
+        padding:
+            7px
+            10px;
+
+        flex-shrink: 0;
+    }
+
+    .reply-quote {
+        margin-bottom: 6px;
+    }
+
+    .reply-quote-text {
+        max-width: 65vw;
+    }
+}
+
+
+/* ============================================================
+   v4: ответы — кнопка всегда видна, чтобы обновление было очевидно
+   ============================================================ */
+
+.app-version {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: #e8eef8;
+    font-size: 11px;
+    font-weight: normal;
+}
+
+.reply-message-button {
+    width: auto !important;
+    min-width: 78px;
+    height: 30px;
+    flex: 0 0 auto !important;
+    padding: 0 8px;
+    border-radius: 15px;
+    opacity: .78 !important;
+    font-size: 12px !important;
+    white-space: nowrap;
+}
+
+.message-wrap:hover .reply-message-button {
+    opacity: 1 !important;
+}
+
+@media (max-width: 700px) {
+    .reply-message-button {
+        min-width: 34px;
+        width: 34px !important;
+        padding: 0;
+        overflow: hidden;
+        text-indent: -9999px;
+        position: relative;
+    }
+
+    .reply-message-button::after {
+        content: "↩";
+        position: absolute;
+        inset: 0;
+        text-indent: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+    }
+}
+
+
+/* ============================================================
+   v5 — аккуратные ответы и цитаты
+   ============================================================ */
+
+/* Карточка сообщения сама является контейнером для кнопки ответа */
+.message {
+    position: relative;
+}
+
+/* Старый внешний контейнер больше не используется */
+.message-wrap {
+    display: contents !important;
+}
+
+/* Небольшая ненавязчивая кнопка в правом верхнем углу сообщения */
+.reply-message-button {
+    position: absolute !important;
+    top: 5px !important;
+    right: 6px !important;
+
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 24px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    border: 0 !important;
+    border-radius: 50% !important;
+
+    background: rgba(0, 0, 0, .045) !important;
+    color: #777 !important;
+
+    font-size: 14px !important;
+    line-height: 24px !important;
+    text-align: center !important;
+
+    opacity: 0 !important;
+
+    z-index: 2;
+
+    transition:
+        opacity .12s ease,
+        background .12s ease,
+        color .12s ease;
+}
+
+.message:hover .reply-message-button {
+    opacity: .72 !important;
+}
+
+.reply-message-button:hover {
+    opacity: 1 !important;
+    background: rgba(0, 0, 0, .09) !important;
+    color: #333 !important;
+}
+
+/* Чтобы имя отправителя не заходило под кнопку */
+.message-name {
+    padding-right: 28px;
+}
+
+/* Настоящая визуальная цитата — отдельный блок */
+.reply-quote {
+    display: block;
+
+    margin: 5px 0 8px !important;
+    padding: 6px 9px !important;
+
+    border-left: 3px solid #7d96b8 !important;
+    border-radius: 5px !important;
+
+    background: rgba(80, 105, 140, .08) !important;
+
+    max-width: 100%;
+}
+
+.message.mine .reply-quote {
+    background: rgba(60, 110, 170, .09) !important;
+}
+
+.reply-quote-name {
+    margin-bottom: 3px !important;
+
+    font-size: 11px !important;
+    font-weight: 600 !important;
+
+    color: #58769c !important;
+}
+
+.reply-quote-text {
+    display: block;
+
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+
+    color: #555 !important;
+
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Основной ответ визуально отделён от цитаты */
+.message-text {
+    margin-top: 2px;
+    line-height: 1.38;
+}
+
+
+/* На телефоне кнопка чуть заметнее, но остаётся маленькой */
+@media (max-width: 700px) {
+
+    .reply-message-button {
+        top: 4px !important;
+        right: 5px !important;
+
+        width: 23px !important;
+        min-width: 23px !important;
+        height: 23px !important;
+
+        line-height: 23px !important;
+
+        opacity: .48 !important;
+
+        text-indent: 0 !important;
+        overflow: visible !important;
+    }
+
+    .reply-message-button::after {
+        content: none !important;
+    }
+
+    .reply-message-button:active {
+        opacity: 1 !important;
+    }
+
+    .message-name {
+        padding-right: 26px;
+    }
+
+    .reply-quote {
+        margin-top: 4px !important;
+        margin-bottom: 7px !important;
+    }
+
+    .reply-quote-text {
+        max-width: 68vw;
+    }
+}
+
+
+/* ============================================================
+   v8 — textarea
+   ============================================================ */
+
+.message-form textarea {
+    flex: 1;
+    min-width: 0;
+
+    padding: 12px;
+
+    border: 1px solid #ccc;
+    border-radius: 8px;
+
+    resize: none;
+    font: inherit;
+    line-height: 20px;
+}
+
+@media (max-width: 700px) {
+    .message-form textarea {
+        padding: 11px;
+        font-size: 16px;
+    }
+}
+
+
+/* ============================================================
+   Брендинг Манул Чат
+   ============================================================ */
+
+/* Логотип на странице авторизации */
+.login-logo {
+    display: block;
+
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+
+    margin: 0 auto 24px auto;
+
+    object-fit: contain;
+}
+
+/* Иконка в левом нижнем углу интерфейса чата */
+.chat-corner-logo {
+    position: fixed;
+
+    left: 14px;
+    bottom: 14px;
+
+    width: 46px;
+    height: 46px;
+
+    object-fit: contain;
+
+    z-index: 50;
+
+    opacity: .92;
+
+    pointer-events: none;
+    user-select: none;
+
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,.18));
+}
+
+/* На телефоне немного уменьшаем */
+@media (max-width: 700px) {
+    .login-logo {
+        max-width: 260px;
+        margin-bottom: 20px;
+    }
+
+    .chat-corner-logo {
+        left: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom));
+
+        width: 38px;
+        height: 38px;
+    }
+}
+
+
+/* ============================================================
+   Манул Чат — логотип в верхней панели
+   ============================================================ */
+
+.chat-corner-logo {
+    display: none !important;
+}
+
+.topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    min-width: 0;
+}
+
+.topbar-logo {
+    display: block;
+
+    width: 36px;
+    height: 36px;
+
+    flex: 0 0 36px;
+
+    object-fit: contain;
+
+    user-select: none;
+    pointer-events: none;
+}
+
+.topbar-brand strong {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+    .topbar-brand {
+        gap: 7px;
+    }
+
+    .topbar-logo {
+        width: 32px;
+        height: 32px;
+        flex-basis: 32px;
+    }
+
+    .topbar-brand strong {
+        font-size: 15px;
+    }
+}

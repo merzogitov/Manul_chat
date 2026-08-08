@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover"
+    >
+    <title>Манул Чат</title>
+    <link rel="icon" type="image/png" href="/static/image/logo_min.png">
+    <link rel="stylesheet" href="/static/style.css">
+
+    <style>
+        /* ====================================================
+           Ответы на сообщения — локальные стили v6
+           ==================================================== */
+
+        .message-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            width: fit-content;
+            max-width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .message-row.mine-row {
+            margin-left: auto;
+        }
+
+        .message-row .message {
+            margin-bottom: 0 !important;
+        }
+
+        .reply-side-button {
+            width: 22px;
+            min-width: 22px;
+            height: 22px;
+
+            padding: 0;
+            margin: 0;
+
+            border: 0;
+            border-radius: 50%;
+
+            background: transparent;
+            color: #8a8a8a;
+
+            font-size: 15px;
+            line-height: 22px;
+            text-align: center;
+
+            opacity: .42;
+
+            cursor: pointer;
+            flex: 0 0 22px;
+
+            transition:
+                opacity .12s ease,
+                background .12s ease,
+                color .12s ease;
+        }
+
+        .message-row:hover .reply-side-button {
+            opacity: .78;
+        }
+
+        .reply-side-button:hover {
+            opacity: 1;
+            color: #444;
+            background: rgba(0,0,0,.06);
+        }
+
+        .reply-quote {
+            display: block !important;
+
+            margin: 3px 0 8px !important;
+            padding: 7px 9px !important;
+
+            border-left: 3px solid #7998bd !important;
+            border-radius: 5px !important;
+
+            background: rgba(80,110,150,.09) !important;
+
+            line-height: 1.25 !important;
+        }
+
+        .message.mine .reply-quote {
+            background: rgba(60,105,165,.10) !important;
+        }
+
+        .reply-quote-name {
+            display: block !important;
+            margin: 0 0 3px 0 !important;
+
+            color: #52749c !important;
+
+            font-size: 11px !important;
+            font-weight: 700 !important;
+        }
+
+        .reply-quote-text {
+            display: block !important;
+
+            color: #555 !important;
+
+            font-size: 12px !important;
+            font-weight: 400 !important;
+            line-height: 1.3 !important;
+
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+
+        .message-text {
+            display: block;
+            margin-top: 1px;
+        }
+
+        @media (max-width: 700px) {
+            .message-row {
+                gap: 3px;
+                margin-bottom: 8px;
+                max-width: 100%;
+            }
+
+            .message-row .message {
+                max-width: calc(86vw - 30px) !important;
+            }
+
+            .reply-side-button {
+                width: 20px;
+                min-width: 20px;
+                height: 20px;
+                flex-basis: 20px;
+
+                font-size: 14px;
+                line-height: 20px;
+
+                opacity: .5;
+            }
+
+            .reply-quote {
+                padding: 6px 8px !important;
+                margin-bottom: 7px !important;
+            }
+
+            .reply-quote-text {
+                max-width: 62vw;
+            }
+        }
+
+        /* ====================================================
+           Исправления v8
+           ==================================================== */
+
+        /*
+           Ряд сообщения занимает только нужную ширину.
+           Для своих сообщений весь ряд прижимается вправо,
+           поэтому стрелка остаётся непосредственно у пузыря.
+        */
+        .message-row {
+            display: flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+
+            width: max-content !important;
+            max-width: 100% !important;
+
+            margin-bottom: 12px !important;
+        }
+
+        .message-row.mine-row {
+            margin-left: auto !important;
+            margin-right: 0 !important;
+        }
+
+        .message-row .message {
+            flex: 0 1 auto !important;
+            width: auto !important;
+            margin: 0 !important;
+        }
+
+        .reply-side-button {
+            flex: 0 0 22px !important;
+            align-self: center !important;
+        }
+
+        /* Поле ввода по размеру как раньше, но теперь многострочное. */
+        .message-input {
+            flex: 1 1 auto !important;
+
+            width: 100% !important;
+            min-width: 0 !important;
+
+            min-height: 44px !important;
+            height: 44px;
+
+            padding: 11px 12px !important;
+
+            border: 1px solid #ccc !important;
+            border-radius: 8px !important;
+
+            resize: none !important;
+            overflow-y: hidden;
+
+            font-family: inherit !important;
+            font-size: 16px !important;
+            line-height: 20px !important;
+        }
+
+        .message-form {
+            align-items: flex-end !important;
+        }
+
+        @media (max-width: 700px) {
+            .message-row {
+                gap: 3px !important;
+                max-width: 100% !important;
+                margin-bottom: 8px !important;
+            }
+
+            .message-row .message {
+                max-width: calc(86vw - 28px) !important;
+            }
+
+            .message-input {
+                width: 100% !important;
+                min-width: 0 !important;
+
+                min-height: 44px !important;
+                height: 44px;
+
+                padding: 11px !important;
+                font-size: 16px !important;
+                line-height: 20px !important;
+            }
+
+            .message-form {
+                display: flex !important;
+                width: 100% !important;
+                align-items: flex-end !important;
+            }
+        }
+
+    </style>
+</head>
+
+<body class="chat-body">
+
+<div class="topbar">
+    <div class="topbar-brand">
+        <img
+            src="/static/image/logo_min.png"
+            alt=""
+            class="topbar-logo"
+        >
+
+        <strong>
+            Манул Чат
+            <span class="app-version">v8</span>
+        </strong>
+    </div>
+
+    <div class="topbar-user">
+        <span id="myName"></span>
+
+        <button onclick="logout()">
+            Выйти
+        </button>
+    </div>
+</div>
+
+<div
+    id="chatLayout"
+    class="chat-layout"
+>
+    <div
+        id="usersPanel"
+        class="users-panel"
+    >
+        <div class="mobile-list-title">
+            Пользователи
+        </div>
+
+        <div id="users"></div>
+    </div>
+
+    <div
+        id="chatPanel"
+        class="chat-panel"
+    >
+        <div class="chat-header">
+            <button
+                class="mobile-back"
+                onclick="showUsers()"
+            >
+                ←
+            </button>
+
+            <div class="chat-header-person">
+                <strong id="peerName">
+                    Выберите пользователя
+                </strong>
+
+                <div
+                    id="peerStatus"
+                    class="peer-status"
+                ></div>
+            </div>
+
+            <button
+                id="clearChatButton"
+                class="clear-chat-button"
+                onclick="clearChat()"
+                disabled
+            >
+                Очистить переписку
+            </button>
+        </div>
+
+        <div
+            id="messages"
+            class="messages"
+        >
+            <div class="empty-chat">
+                Выберите пользователя,
+                чтобы начать переписку
+            </div>
+        </div>
+
+        <div
+            id="replyBar"
+            class="reply-bar"
+            hidden
+        >
+            <div class="reply-bar-content">
+                <strong id="replyBarName"></strong>
+                <div id="replyBarText"></div>
+            </div>
+
+            <button
+                class="reply-cancel-button"
+                onclick="cancelReply()"
+                title="Отменить ответ"
+            >
+                ✕
+            </button>
+        </div>
+
+        <div
+            class="message-form"
+            id="messageForm"
+        >
+            <input
+                id="imageInput"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                hidden
+                onchange="imageSelected()"
+            >
+
+            <button
+                id="attachButton"
+                class="attach-button"
+                onclick="selectImage()"
+                disabled
+                title="Отправить изображение"
+            >
+                📎
+            </button>
+
+            <textarea
+                id="messageInput"
+                class="message-input"
+                placeholder="Сообщение..."
+                rows="1"
+                disabled
+            ></textarea>
+
+            <button
+                id="sendButton"
+                class="send-button"
+                onclick="sendMessage()"
+                disabled
+            >
+                ➤
+            </button>
+        </div>
+
+        <div
+            id="uploadStatus"
+            class="upload-status"
+        ></div>
+    </div>
+</div>
+
+<script>
+let me = null;
+let users = [];
+let selectedUser = null;
+let socket = null;
+let replyingTo = null;
+
+async function init() {
+    const response =
+        await fetch("/api/me");
+
+    if (!response.ok) {
+        location.href = "/login";
+        return;
+    }
+
+    me = await response.json();
+
+    document.getElementById(
+        "myName"
+    ).textContent =
+        me.display_name;
+
+    try {
+        const versionResponse =
+            await fetch("/api/version");
+
+        if (versionResponse.ok) {
+            const versionData =
+                await versionResponse.json();
+
+            console.log(
+                "Messenger version:",
+                versionData.version
+            );
+        }
+    } catch {}
+
+    await loadUsers();
+    connectWebSocket();
+}
+
+async function loadUsers() {
+    const response =
+        await fetch("/api/users");
+
+    if (!response.ok)
+        return;
+
+    users =
+        await response.json();
+
+    if (selectedUser) {
+        const fresh =
+            users.find(
+                u =>
+                    u.id ===
+                    selectedUser.id
+            );
+
+        if (fresh) {
+            selectedUser = fresh;
+            updatePeerStatus();
+        }
+    }
+
+    drawUsers();
+}
+
+function drawUsers() {
+    const panel =
+        document.getElementById(
+            "users"
+        );
+
+    panel.innerHTML = "";
+
+    for (const user of users) {
+        const div =
+            document.createElement(
+                "div"
+            );
+
+        div.className =
+            "user-item";
+
+        if (
+            selectedUser
+            &&
+            selectedUser.id === user.id
+        ) {
+            div.classList.add(
+                "active"
+            );
+        }
+
+        const top =
+            document.createElement(
+                "div"
+            );
+
+        top.className =
+            "user-line";
+
+        const name =
+            document.createElement(
+                "strong"
+            );
+
+        name.textContent =
+            user.display_name;
+
+        top.appendChild(name);
+
+        if (user.unread > 0) {
+            const badge =
+                document.createElement(
+                    "span"
+                );
+
+            badge.className =
+                "badge";
+
+            badge.textContent =
+                user.unread;
+
+            top.appendChild(
+                badge
+            );
+        }
+
+        const status =
+            document.createElement(
+                "div"
+            );
+
+        status.className =
+            user.online
+                ? "online"
+                : "offline";
+
+        status.textContent =
+            user.online
+                ? "● онлайн"
+                : formatLastSeen(
+                    user.last_seen
+                );
+
+        div.appendChild(top);
+        div.appendChild(status);
+
+        div.onclick = () => {
+            selectUser(
+                user.id
+            );
+        };
+
+        panel.appendChild(div);
+    }
+}
+
+async function selectUser(userId) {
+    cancelReply();
+
+    selectedUser =
+        users.find(
+            u =>
+                u.id === userId
+        );
+
+    if (!selectedUser)
+        return;
+
+    document.getElementById(
+        "peerName"
+    ).textContent =
+        selectedUser.display_name;
+
+    updatePeerStatus();
+
+    document.getElementById(
+        "messageInput"
+    ).disabled = false;
+
+    document.getElementById(
+        "sendButton"
+    ).disabled = false;
+
+    document.getElementById(
+        "attachButton"
+    ).disabled = false;
+
+    document.getElementById(
+        "clearChatButton"
+    ).disabled = false;
+
+    drawUsers();
+
+    if (isMobile()) {
+        document.body.classList.add(
+            "mobile-chat-open"
+        );
+    }
+
+    await loadMessages();
+
+    await fetch(
+        `/api/messages/${userId}/read`,
+        {
+            method: "POST"
+        }
+    );
+
+    await loadUsers();
+
+    document.getElementById(
+        "messageInput"
+    ).focus();
+}
+
+function showUsers() {
+    cancelReply();
+
+    document.body.classList.remove(
+        "mobile-chat-open"
+    );
+}
+
+function isMobile() {
+    return window.matchMedia(
+        "(max-width: 700px)"
+    ).matches;
+}
+
+function updatePeerStatus() {
+    if (!selectedUser)
+        return;
+
+    document.getElementById(
+        "peerStatus"
+    ).textContent =
+        selectedUser.online
+            ? "● онлайн"
+            : formatLastSeen(
+                selectedUser.last_seen
+            );
+}
+
+function formatLastSeen(value) {
+    if (!value) {
+        return "○ офлайн";
+    }
+
+    try {
+        const date =
+            new Date(value);
+
+        return (
+            "был(а) "
+            +
+            date.toLocaleString()
+        );
+    } catch {
+        return "○ офлайн";
+    }
+}
+
+async function loadMessages() {
+    if (!selectedUser)
+        return;
+
+    const response =
+        await fetch(
+            `/api/messages/${selectedUser.id}`
+        );
+
+    if (!response.ok)
+        return;
+
+    const data =
+        await response.json();
+
+    const panel =
+        document.getElementById(
+            "messages"
+        );
+
+    panel.innerHTML = "";
+
+    for (const message of data) {
+        appendMessage(
+            message
+        );
+    }
+
+    scrollBottom();
+}
+
+function appendMessage(message) {
+    const panel =
+        document.getElementById(
+            "messages"
+        );
+
+    const row =
+        document.createElement(
+            "div"
+        );
+
+    row.className =
+        "message-row";
+
+    if (
+        message.sender_id === me.id
+    ) {
+        row.classList.add(
+            "mine-row"
+        );
+    }
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+    div.className =
+        "message";
+
+    div.dataset.messageId =
+        message.id;
+
+    if (
+        message.sender_id === me.id
+    ) {
+        div.classList.add(
+            "mine"
+        );
+    }
+
+    const replyButton =
+        document.createElement(
+            "button"
+        );
+
+    replyButton.className =
+        "reply-side-button";
+
+    replyButton.textContent =
+        "↩";
+
+    replyButton.title =
+        "Ответить";
+
+    replyButton.setAttribute(
+        "aria-label",
+        "Ответить"
+    );
+
+    replyButton.onclick =
+        event => {
+            event.stopPropagation();
+            startReply(message);
+        };
+
+    const name =
+        document.createElement(
+            "div"
+        );
+
+    name.className =
+        "message-name";
+
+    name.textContent =
+        message.sender_name;
+
+    div.appendChild(name);
+
+    if (message.reply) {
+        const quote =
+            document.createElement(
+                "div"
+            );
+
+        quote.className =
+            "reply-quote";
+
+        const quoteName =
+            document.createElement(
+                "div"
+            );
+
+        quoteName.className =
+            "reply-quote-name";
+
+        quoteName.textContent =
+            message.reply.sender_name;
+
+        const quoteText =
+            document.createElement(
+                "div"
+            );
+
+        quoteText.className =
+            "reply-quote-text";
+
+        if (message.reply.text) {
+            quoteText.textContent =
+                message.reply.text;
+        } else if (
+            message.reply.has_image
+        ) {
+            quoteText.textContent =
+                "🖼 "
+                + (
+                    message.reply.attachment_name
+                    || "Изображение"
+                );
+        } else {
+            quoteText.textContent =
+                "Сообщение";
+        }
+
+        quote.appendChild(
+            quoteName
+        );
+
+        quote.appendChild(
+            quoteText
+        );
+
+        div.appendChild(
+            quote
+        );
+    }
+
+    if (message.text) {
+        const text =
+            document.createElement(
+                "div"
+            );
+
+        text.className =
+            "message-text";
+
+        text.textContent =
+            message.text;
+
+        div.appendChild(text);
+    }
+
+    if (
+        message.attachment
+        &&
+        message.attachment.is_image
+    ) {
+        const link =
+            document.createElement(
+                "a"
+            );
+
+        link.href =
+            message.attachment.url;
+
+        link.target =
+            "_blank";
+
+        const img =
+            document.createElement(
+                "img"
+            );
+
+        img.className =
+            "chat-image";
+
+        img.src =
+            message.attachment.url;
+
+        img.alt =
+            message.attachment
+                .original_name;
+
+        link.appendChild(img);
+        div.appendChild(link);
+
+        const filename =
+            document.createElement(
+                "div"
+            );
+
+        filename.className =
+            "attachment-name";
+
+        filename.textContent =
+            message.attachment
+                .original_name;
+
+        div.appendChild(
+            filename
+        );
+    }
+
+    const time =
+        document.createElement(
+            "div"
+        );
+
+    time.className =
+        "message-time";
+
+    time.textContent =
+        formatDate(
+            message.created_at
+        );
+
+    div.appendChild(time);
+
+    /*
+        Полученные:
+            [ сообщение ] [↩]
+
+        Свои:
+            [↩] [ сообщение ]
+
+        Поэтому кнопка всегда находится со стороны центра чата
+        и не увеличивает сам пузырь сообщения.
+    */
+    if (
+        message.sender_id === me.id
+    ) {
+        row.appendChild(
+            replyButton
+        );
+
+        row.appendChild(
+            div
+        );
+    } else {
+        row.appendChild(
+            div
+        );
+
+        row.appendChild(
+            replyButton
+        );
+    }
+
+    panel.appendChild(
+        row
+    );
+}
+
+function startReply(message) {
+    replyingTo = {
+        id: message.id,
+        sender_name:
+            message.sender_name,
+        text:
+            message.text || "",
+        has_image:
+            Boolean(
+                message.attachment
+                &&
+                message.attachment.is_image
+            ),
+        attachment_name:
+            message.attachment
+                ? message.attachment.original_name
+                : null
+    };
+
+    document.getElementById(
+        "replyBar"
+    ).hidden = false;
+
+    document.getElementById(
+        "replyBarName"
+    ).textContent =
+        replyingTo.sender_name;
+
+    let preview =
+        replyingTo.text.trim();
+
+    if (!preview && replyingTo.has_image) {
+        preview =
+            "🖼 "
+            + (
+                replyingTo.attachment_name
+                || "Изображение"
+            );
+    }
+
+    if (preview.length > 160) {
+        preview =
+            preview.slice(0, 157)
+            + "...";
+    }
+
+    document.getElementById(
+        "replyBarText"
+    ).textContent =
+        preview || "Сообщение";
+
+    document.getElementById(
+        "messageInput"
+    ).focus();
+}
+
+
+function cancelReply() {
+    replyingTo = null;
+
+    const bar =
+        document.getElementById(
+            "replyBar"
+        );
+
+    if (bar) {
+        bar.hidden = true;
+    }
+}
+
+function connectWebSocket() {
+    const protocol =
+        location.protocol === "https:"
+            ? "wss"
+            : "ws";
+
+    socket =
+        new WebSocket(
+            `${protocol}://${location.host}/ws`
+        );
+
+    socket.onmessage =
+        async event => {
+            const data =
+                JSON.parse(
+                    event.data
+                );
+
+            if (
+                data.type ===
+                "presence"
+            ) {
+                const user =
+                    users.find(
+                        u =>
+                            u.id ===
+                            data.user_id
+                    );
+
+                if (user) {
+                    user.online =
+                        data.online;
+
+                    if (!data.online) {
+                        user.last_seen =
+                            new Date()
+                                .toISOString();
+                    }
+
+                    drawUsers();
+
+                    if (
+                        selectedUser
+                        &&
+                        selectedUser.id
+                            ===
+                            data.user_id
+                    ) {
+                        selectedUser =
+                            user;
+
+                        updatePeerStatus();
+                    }
+                }
+
+                return;
+            }
+
+            if (
+                data.type ===
+                "message"
+            ) {
+                const related =
+                    selectedUser
+                    &&
+                    (
+                        data.sender_id
+                            ===
+                            selectedUser.id
+
+                        ||
+
+                        data.receiver_id
+                            ===
+                            selectedUser.id
+                    );
+
+                if (related) {
+                    appendMessage(
+                        data
+                    );
+
+                    scrollBottom();
+
+                    if (
+                        data.sender_id
+                        ===
+                        selectedUser.id
+                    ) {
+                        await fetch(
+                            `/api/messages/${selectedUser.id}/read`,
+                            {
+                                method:
+                                    "POST"
+                            }
+                        );
+                    }
+                }
+
+                await loadUsers();
+            }
+        };
+
+    socket.onclose = () => {
+        setTimeout(
+            connectWebSocket,
+            2000
+        );
+    };
+}
+
+function sendMessage() {
+    if (!selectedUser)
+        return;
+
+    const input =
+        document.getElementById(
+            "messageInput"
+        );
+
+    const text =
+        input.value.trim();
+
+    if (!text)
+        return;
+
+    if (
+        !socket
+        ||
+        socket.readyState
+        !== WebSocket.OPEN
+    ) {
+        alert(
+            "Нет соединения с сервером"
+        );
+
+        return;
+    }
+
+    socket.send(
+        JSON.stringify({
+            type:
+                "message",
+            receiver_id:
+                selectedUser.id,
+            text:
+                text,
+            reply_to_message_id:
+                replyingTo
+                    ? replyingTo.id
+                    : null
+        })
+    );
+
+    input.value = "";
+    resizeMessageInput();
+    cancelReply();
+}
+
+function selectImage() {
+    if (!selectedUser)
+        return;
+
+    document
+        .getElementById(
+            "imageInput"
+        )
+        .click();
+}
+
+async function imageSelected() {
+    const input =
+        document.getElementById(
+            "imageInput"
+        );
+
+    const file =
+        input.files[0];
+
+    if (!file)
+        return;
+
+    if (
+        file.size >
+        20 * 1024 * 1024
+    ) {
+        alert(
+            "Файл больше 20 МБ"
+        );
+
+        input.value = "";
+
+        return;
+    }
+
+    const allowed = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif"
+    ];
+
+    if (
+        !allowed.includes(
+            file.type
+        )
+    ) {
+        alert(
+            "Разрешены JPG, PNG, WebP и GIF"
+        );
+
+        input.value = "";
+
+        return;
+    }
+
+    const status =
+        document.getElementById(
+            "uploadStatus"
+        );
+
+    status.textContent =
+        "Отправка изображения...";
+
+    const form =
+        new FormData();
+
+    form.append(
+        "receiver_id",
+        selectedUser.id
+    );
+
+    form.append(
+        "file",
+        file
+    );
+
+    if (replyingTo) {
+        form.append(
+            "reply_to_message_id",
+            replyingTo.id
+        );
+    }
+
+    try {
+        const response =
+            await fetch(
+                "/api/upload-image",
+                {
+                    method: "POST",
+                    body: form
+                }
+            );
+
+        let data = {};
+
+        try {
+            data =
+                await response.json();
+        } catch {}
+
+        if (!response.ok) {
+            alert(
+                data.detail
+                ||
+                "Ошибка загрузки"
+            );
+        } else {
+            cancelReply();
+        }
+    } catch {
+        alert(
+            "Ошибка соединения"
+        );
+    } finally {
+        input.value = "";
+        status.textContent = "";
+    }
+}
+
+function formatDate(value) {
+    try {
+        return new Date(value)
+            .toLocaleString(
+                [],
+                {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
+    } catch {
+        return value;
+    }
+}
+
+function scrollBottom() {
+    const panel =
+        document.getElementById(
+            "messages"
+        );
+
+    panel.scrollTop =
+        panel.scrollHeight;
+}
+
+document
+    .getElementById(
+        "messageInput"
+    )
+    .addEventListener(
+        "keydown",
+        event => {
+            const touchDevice =
+                window.matchMedia(
+                    "(pointer: coarse)"
+                ).matches;
+
+            // ПК: Enter отправляет, Shift+Enter переносит строку.
+            // Телефон/планшет: Enter всегда переносит строку.
+            if (
+                event.key === "Enter"
+                &&
+                !event.shiftKey
+                &&
+                !touchDevice
+            ) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+    );
+
+const messageInput =
+    document.getElementById(
+        "messageInput"
+    );
+
+function resizeMessageInput() {
+    messageInput.style.height = "44px";
+
+    const maxHeight =
+        isMobile()
+            ? 104
+            : 120;
+
+    const needed =
+        Math.max(
+            44,
+            Math.min(
+                messageInput.scrollHeight,
+                maxHeight
+            )
+        );
+
+    messageInput.style.height =
+        needed + "px";
+
+    messageInput.style.overflowY =
+        messageInput.scrollHeight > maxHeight
+            ? "auto"
+            : "hidden";
+}
+
+messageInput.addEventListener(
+    "input",
+    resizeMessageInput
+);
+
+window.addEventListener(
+    "resize",
+    () => {
+        if (!isMobile()) {
+            document.body.classList.remove(
+                "mobile-chat-open"
+            );
+        }
+    }
+);
+
+async function clearChat() {
+    if (!selectedUser)
+        return;
+
+    cancelReply();
+
+    const confirmed =
+        confirm("Очистить всю переписку?");
+
+    if (!confirmed)
+        return;
+
+    const response =
+        await fetch(
+            `/api/messages/${selectedUser.id}/clear`,
+            {
+                method: "POST"
+            }
+        );
+
+    if (!response.ok) {
+        let data = {};
+
+        try {
+            data =
+                await response.json();
+        } catch {}
+
+        alert(
+            data.detail
+            || "Не удалось очистить переписку"
+        );
+
+        return;
+    }
+
+    const panel =
+        document.getElementById(
+            "messages"
+        );
+
+    panel.innerHTML =
+        '<div class="empty-chat">Переписка очищена</div>';
+
+    await loadUsers();
+}
+
+
+async function logout() {
+    await fetch(
+        "/api/logout",
+        {
+            method: "POST"
+        }
+    );
+
+    location.href =
+        "/login";
+}
+
+init();
+</script>
+
+</body>
+</html>
