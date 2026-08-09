@@ -8,47 +8,35 @@
 
 ## Скриншоты
 
-### Вход
+<details>
+<summary>📷 Показать скриншоты</summary>
+
+<br>
+
+### Авторизация
 
 <p align="center">
   <img src="screenshot/003.png" width="500">
 </p>
 
-### Интерфейс на ПК
+### Чат на компьютере
 
 <p align="center">
   <img src="screenshot/001.png" width="800">
 </p>
 
-### Интерфейс на ПК
-
 <p align="center">
   <img src="screenshot/002.png" width="800">
 </p>
 
-
-### Интерфейс на телефоне
+### Чат на телефоне
 
 <p align="center">
   <img src="screenshot/004.jpg" width="300">
 </p>
 
+</details>
 
-
-
-## Скриншоты
-
-### Авторизация
-
-![Окно авторизации](screenshot/003.png)
-
-### Чат на компьютере
-
-![Чат на ПК](screenshot/002.png)
-
-### Чат на телефоне
-
-![Чат на телефоне](screenshot/003.png)
 
 
 Запуск:
