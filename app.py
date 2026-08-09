@@ -84,7 +84,7 @@ ALLOWED_IMAGE_TYPES = {
 
 password_hash = PasswordHash.recommended()
 
-APP_VERSION = "2026.08.09-pwa-push1"
+APP_VERSION = "2026.08.09-pwa-push1-fixdeps"
 
 app = FastAPI()
 

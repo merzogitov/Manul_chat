@@ -8,7 +8,8 @@ WORKDIR /app
 COPY requirements.txt /app/requirements.txt
 
 RUN python -m pip install --no-cache-dir --upgrade pip \
-    && python -m pip install --no-cache-dir -r /app/requirements.txt
+    && python -m pip install --no-cache-dir -r /app/requirements.txt \
+    && python -c "import pywebpush, cryptography; print('Push dependencies: OK')"
 
 COPY app.py /app/app.py
 COPY static /app/static
