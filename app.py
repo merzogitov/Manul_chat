@@ -48,10 +48,20 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 SESSION_DAYS = 14
 MAX_FILE_SIZE = 20 * 1024 * 1024
 
-# Для локальной разработки False.
-# За HTTPS/reverse proxy можно запустить:
-# set COOKIE_SECURE=1
-COOKIE_SECURE = os.getenv("COOKIE_SECURE", "0") == "1"
+# Режим запуска:
+# development - локальное тестирование по HTTP
+# production  - публикация за HTTPS reverse proxy
+APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
+PRODUCTION = APP_ENV == "production"
+
+# В production cookie всегда Secure.
+# В development при необходимости можно включить COOKIE_SECURE=1.
+COOKIE_SECURE = (
+    PRODUCTION
+    or os.getenv("COOKIE_SECURE", "0") == "1"
+)
+
+STATIC_VERSION = "20260809-prod1"
 
 ALLOWED_IMAGE_TYPES = {
     "image/jpeg": ".jpg",
@@ -62,7 +72,7 @@ ALLOWED_IMAGE_TYPES = {
 
 password_hash = PasswordHash.recommended()
 
-APP_VERSION = "2026.08.09-logo-v2"
+APP_VERSION = "2026.08.09-production-stage1"
 
 app = FastAPI()
 
@@ -74,18 +84,50 @@ app.mount(
 
 
 @app.middleware("http")
-async def disable_browser_cache(request: Request, call_next):
+async def cache_headers(request: Request, call_next):
     response = await call_next(request)
+    path = request.url.path
 
-    # Пока приложение активно разрабатывается, отключаем кеш браузера,
-    # чтобы после обновления файлов телефон/ПК сразу видел новую версию.
+    # API и защищённые вложения не кешируем.
     if (
-        request.url.path.startswith("/static/")
-        or request.url.path in {"/", "/login", "/chat", "/admin"}
+        path.startswith("/api/")
+        or path.startswith("/attachment/")
+        or path.startswith("/api/attachments/")
     ):
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+    if PRODUCTION:
+        # HTML всегда перепроверяется у сервера.
+        if path in {"/", "/login", "/chat", "/admin"}:
+            response.headers["Cache-Control"] = "no-cache, must-revalidate"
+            return response
+
+        # Логотипы / favicon — 30 дней.
+        if path.startswith("/static/image/"):
+            response.headers["Cache-Control"] = (
+                "public, max-age=2592000, immutable"
+            )
+            return response
+
+        # CSS и другая статика — 7 дней.
+        if path.startswith("/static/"):
+            response.headers["Cache-Control"] = (
+                "public, max-age=604800, immutable"
+            )
+            return response
+
+    else:
+        # В development кеш отключён для удобной разработки.
+        if (
+            path.startswith("/static/")
+            or path in {"/", "/login", "/chat", "/admin"}
+        ):
+            response.headers["Cache-Control"] = (
+                "no-store, no-cache, must-revalidate, max-age=0"
+            )
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
 
     return response
 
@@ -108,8 +150,13 @@ def now_string():
 
 
 def db():
-    con = sqlite3.connect(DB_FILE)
+    con = sqlite3.connect(
+        DB_FILE,
+        timeout=10.0
+    )
     con.row_factory = sqlite3.Row
+    con.execute("PRAGMA busy_timeout = 10000")
+    con.execute("PRAGMA foreign_keys = ON")
     return con
 
 
@@ -123,6 +170,8 @@ def token_hash(token: str):
 
 def init_db():
     with db() as con:
+        con.execute("PRAGMA journal_mode = WAL")
+        con.execute("PRAGMA synchronous = NORMAL")
         con.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -213,6 +262,24 @@ def init_db():
         """)
 
 
+def generate_admin_password():
+    alphabet = (
+        "ABCDEFGHJKLMNPQRSTUVWXYZ"
+        "abcdefghijkmnopqrstuvwxyz"
+        "23456789"
+    )
+
+    raw = "".join(
+        secrets.choice(alphabet)
+        for _ in range(20)
+    )
+
+    return "-".join(
+        raw[i:i + 4]
+        for i in range(0, len(raw), 4)
+    )
+
+
 def create_initial_admin():
     with db() as con:
         row = con.execute("""
@@ -225,8 +292,22 @@ def create_initial_admin():
         if row:
             return
 
-        username = os.getenv("ADMIN_USER", "admin")
-        password = os.getenv("ADMIN_PASSWORD", "admin12345")
+        username = (
+            os.getenv("ADMIN_USER", "admin").strip()
+            or "admin"
+        )
+
+        configured_password = os.getenv(
+            "ADMIN_PASSWORD",
+            ""
+        ).strip()
+
+        password = (
+            configured_password
+            if configured_password
+            else generate_admin_password()
+        )
+
         hashed = password_hash.hash(password)
 
         con.execute("""
@@ -248,16 +329,31 @@ def create_initial_admin():
         ))
 
         print()
-        print("=" * 60)
+        print("=" * 68)
         print("СОЗДАН ПЕРВЫЙ АДМИНИСТРАТОР")
+        print()
         print(f"Логин:  {username}")
         print(f"Пароль: {password}")
-        print("Для реальной эксплуатации обязательно сменить пароль.")
-        print("=" * 60)
+        print()
+        print("СОХРАНИТЕ ПАРОЛЬ!")
+        print("Он показывается только при создании первого admin.")
+        print("В базе хранится только Argon2-хеш.")
+        print("=" * 68)
         print()
 
 
+def cleanup_expired_sessions():
+    with db() as con:
+        con.execute("""
+            DELETE FROM sessions
+            WHERE expires_at < ?
+        """, (
+            now_string(),
+        ))
+
+
 init_db()
+cleanup_expired_sessions()
 create_initial_admin()
 
 
@@ -295,6 +391,13 @@ def get_user_by_session_token(token: str | None):
     expires_at = datetime.fromisoformat(row["expires_at"])
 
     if expires_at < now_utc():
+        with db() as con:
+            con.execute("""
+                DELETE FROM sessions
+                WHERE token_hash = ?
+            """, (
+                hashed,
+            ))
         return None
 
     return dict(row)
@@ -1532,10 +1635,20 @@ def admin_read_messages(
 
 if __name__ == "__main__":
     print()
-    print("=" * 60)
-    print(f"Messenger version: {APP_VERSION}")
-    print("Функция ответов на сообщения: ВКЛЮЧЕНА")
-    print("=" * 60)
+    print("=" * 68)
+    print(f"Манул Чат: {APP_VERSION}")
+    print(f"Режим: {APP_ENV}")
+    print(
+        "Secure cookie: "
+        + ("ВКЛЮЧЕНА" if COOKIE_SECURE else "выключена")
+    )
+
+    if PRODUCTION:
+        print("Production: используйте HTTPS через reverse proxy.")
+    else:
+        print("Development: обычный HTTP для локального тестирования.")
+
+    print("=" * 68)
     print()
 
     uvicorn.run(
