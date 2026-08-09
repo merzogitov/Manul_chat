@@ -72,7 +72,7 @@ ALLOWED_IMAGE_TYPES = {
 
 password_hash = PasswordHash.recommended()
 
-APP_VERSION = "2026.08.09-production-stage1"
+APP_VERSION = "2026.08.09-pwa-stage1"
 
 app = FastAPI()
 
@@ -586,6 +586,28 @@ def get_attachment(message_id: int):
 # ============================================================
 # HTML страницы
 # ============================================================
+
+
+@app.get("/manifest.webmanifest", include_in_schema=False)
+def pwa_manifest():
+    response = FileResponse(
+        STATIC_DIR / "manifest.webmanifest",
+        media_type="application/manifest+json"
+    )
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
+@app.get("/service-worker.js", include_in_schema=False)
+def pwa_service_worker():
+    response = FileResponse(
+        STATIC_DIR / "service-worker.js",
+        media_type="application/javascript"
+    )
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Service-Worker-Allowed"] = "/"
+    return response
+
 
 @app.get("/")
 def root(request: Request):

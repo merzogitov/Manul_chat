@@ -9,6 +9,14 @@
     <title>Манул Чат — вход</title>
     <link rel="icon" type="image/png" href="/static/image/logo_min.png?v=20260809-prod1">
     <link rel="stylesheet" href="/static/style.css?v=20260809-prod1">
+
+    <link rel="manifest" href="/manifest.webmanifest?v=20260809-pwa1">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Манул Чат">
+    <link rel="apple-touch-icon" href="/static/image/apple-touch-icon.png?v=20260809-pwa1">
+
 </head>
 <body>
     <div class="login-box">
@@ -88,5 +96,18 @@
                 }
             );
     </script>
+
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker
+            .register("/service-worker.js?v=20260809-pwa1")
+            .catch(error => {
+                console.error("Service Worker registration failed:", error);
+            });
+    });
+}
+</script>
+
 </body>
 </html>
