@@ -2,43 +2,6 @@
 
 Приватный веб-мессенджер на Python / FastAPI.
 
-
-
-<p align="center">
-  <img src="static/image/logo_max.png" width="350">
-</p>
-
-## Скриншоты
-
-<details>
-<summary>📷 Показать скриншоты</summary>
-
-<br>
-
-### Авторизация
-
-<p align="center">
-  <img src="screenshot/003.png" width="500">
-</p>
-
-### Чат на компьютере
-
-<p align="center">
-  <img src="screenshot/001.png" width="800">
-</p>
-
-<p align="center">
-  <img src="screenshot/002.png" width="800">
-</p>
-
-### Чат на телефоне
-
-<p align="center">
-  <img src="screenshot/004.jpg" width="300">
-</p>
-
-</details>
-
 ## Возможности
 
 - приватные диалоги 1-на-1;
@@ -96,7 +59,7 @@ data/vapid_private.pem
 Для текущей сборки в журнале должно быть:
 
 ```text
-Манул Чат: 2026.08.09-pwa-push1-fixdeps
+Манул Чат: 2026.08.09-ui-push-status1
 ```
 
 При сборке Docker должна появиться строка:

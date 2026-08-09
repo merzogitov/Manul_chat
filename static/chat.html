@@ -280,16 +280,83 @@
 
         @media (max-width: 700px) {
             #pushButton {
-                font-size: 0;
-                width: 34px;
-                min-width: 34px;
-                padding-left: 0;
-                padding-right: 0;
+                width: auto;
+                min-width: 72px;
+                padding-left: 8px;
+                padding-right: 8px;
+                font-size: 12px;
+                white-space: nowrap;
+            }
+        }
+
+
+        /* ====================================================
+           Desktop fixed viewport layout
+           Прокручивается только переписка.
+           Верхнее меню, список чатов, заголовок и ввод остаются на месте.
+           ==================================================== */
+        @media (min-width: 701px) {
+            html,
+            body {
+                height: 100%;
+                min-height: 100%;
+                overflow: hidden !important;
             }
 
-            #pushButton::before {
-                content: "🔔";
-                font-size: 15px;
+            body {
+                margin: 0;
+            }
+
+            .app {
+                height: 100vh !important;
+                max-height: 100vh !important;
+                min-height: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                overflow: hidden !important;
+            }
+
+            .topbar {
+                flex: 0 0 auto !important;
+            }
+
+            .main {
+                flex: 1 1 auto !important;
+                min-height: 0 !important;
+                height: auto !important;
+                overflow: hidden !important;
+            }
+
+            .sidebar {
+                height: 100% !important;
+                min-height: 0 !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+            }
+
+            .chat {
+                height: 100% !important;
+                min-height: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                overflow: hidden !important;
+            }
+
+            .chat-header {
+                flex: 0 0 auto !important;
+            }
+
+            .messages {
+                flex: 1 1 auto !important;
+                min-height: 0 !important;
+                height: auto !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                overscroll-behavior: contain;
+            }
+
+            .composer {
+                flex: 0 0 auto !important;
             }
         }
 
@@ -329,7 +396,7 @@
             onclick="togglePushNotifications()"
             title="Push-уведомления"
         >
-            🔔 Уведомления
+            🔕 Выкл
         </button>
 
         <button onclick="logout()">
@@ -1549,7 +1616,7 @@ async function updatePushButton() {
         || !("Notification" in window)
     ) {
         button.textContent =
-            "🔕 Push не поддерживается";
+            "🔕 Нет Push";
         button.disabled = true;
         return;
     }
@@ -1559,7 +1626,7 @@ async function updatePushButton() {
         === "denied"
     ) {
         button.textContent =
-            "🔕 Уведомления запрещены";
+            "🔕 Выкл";
         return;
     }
 
@@ -1573,8 +1640,8 @@ async function updatePushButton() {
 
         button.textContent =
             subscription
-                ? "🔔 Уведомления: вкл"
-                : "🔔 Уведомления";
+                ? "🔔 Вкл"
+                : "🔕 Выкл";
     } catch (error) {
         console.error(
             "Push status error:",
@@ -1765,7 +1832,7 @@ updatePushButton();
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
         navigator.serviceWorker
-            .register("/service-worker.js?v=20260809-push1")
+            .register("/service-worker.js?v=20260809-ui1")
             .catch(error => {
                 console.error("Service Worker registration failed:", error);
             });
