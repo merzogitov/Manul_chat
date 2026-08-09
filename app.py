@@ -84,7 +84,7 @@ ALLOWED_IMAGE_TYPES = {
 
 password_hash = PasswordHash.recommended()
 
-APP_VERSION = "2026.08.09-static-bindmount1"
+APP_VERSION = "1.0"
 
 app = FastAPI()
 
