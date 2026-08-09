@@ -289,6 +289,65 @@
             }
         }
 
+
+        /* ====================================================
+           Desktop viewport layout v2
+           Верхнее меню, список чатов, заголовок и поле ввода
+           остаются на экране. Прокручиваются только сообщения
+           и, отдельно, длинный список пользователей.
+           ==================================================== */
+        @media (min-width: 701px) {
+            html,
+            body {
+                height: 100%;
+            }
+
+            body.chat-body {
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            .topbar {
+                flex: 0 0 60px;
+            }
+
+            .chat-layout {
+                height: calc(100vh - 60px);
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            .users-panel {
+                min-height: 0;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            .chat-panel {
+                min-height: 0;
+                height: 100%;
+                overflow: hidden;
+            }
+
+            .chat-header {
+                flex: 0 0 auto;
+            }
+
+            .messages {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow-y: auto;
+                overflow-x: hidden;
+                overscroll-behavior: contain;
+            }
+
+            .reply-bar,
+            .message-form,
+            .upload-status {
+                flex: 0 0 auto;
+            }
+        }
+
     </style>
 
     <link rel="manifest" href="/manifest.webmanifest?v=20260809-pwa1">
