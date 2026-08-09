@@ -21,18 +21,17 @@
 
 Сборка рассчитана на запуск через Docker.
 
-Папка:
-
-```text
-data/
-```
-
-должна быть постоянным volume/bind mount:
+Папки `data/` и `static/` подключаются в контейнер как bind mounts:
 
 ```yaml
 volumes:
   - ./data:/app/data
+  - ./static:/app/static
 ```
+
+`data/` содержит постоянные данные приложения.
+
+`static/` содержит HTML/CSS/JS/иконки и подключён отдельно специально для быстрой разработки интерфейса.
 
 В ней находятся:
 
@@ -59,7 +58,7 @@ data/vapid_private.pem
 Для текущей сборки в журнале должно быть:
 
 ```text
-Манул Чат: 2026.08.09-ui-push-status1
+Манул Чат: 2026.08.09-static-bindmount1
 ```
 
 При сборке Docker должна появиться строка:
@@ -170,3 +169,33 @@ python app.py
 
 Для разработки используется `APP_ENV=development`.
 В production используется `APP_ENV=production` и HTTPS.
+
+## Быстрое изменение интерфейса
+
+После перехода на отдельный bind mount `static/` Docker **не нужно пересобирать** при изменении файлов:
+
+```text
+static/chat.html
+static/login.html
+static/admin.html
+static/style.css
+static/service-worker.js
+static/image/*
+```
+
+Достаточно сохранить изменённый файл на Synology и обновить страницу.
+
+Для HTML/CSS обычно достаточно обычного обновления страницы или `Ctrl+F5`.
+
+После изменения `service-worker.js` может потребоваться закрыть и снова открыть PWA либо обновить страницу несколько раз, чтобы браузер активировал новую версию Service Worker.
+
+Build / Rebuild всё ещё нужен при изменении:
+
+```text
+app.py
+requirements.txt
+Dockerfile
+compose.yaml
+```
+
+Изменение `compose.yaml`, добавляющее `./static:/app/static`, требует **одной пересборки/пересоздания контейнера**. После этого HTML/CSS/JS можно править без пересборки.

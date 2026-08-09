@@ -17,6 +17,7 @@ services:
 
     volumes:
       - ./data:/app/data
+      - ./static:/app/static
 
     healthcheck:
       test:
