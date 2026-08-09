@@ -72,7 +72,7 @@ ALLOWED_IMAGE_TYPES = {
 
 password_hash = PasswordHash.recommended()
 
-APP_VERSION = "2026.08.09-pwa-stage1"
+APP_VERSION = "2026.08.09-pwa-stage1-fix1"
 
 app = FastAPI()
 
@@ -630,7 +630,11 @@ def login_page():
 
 @app.get("/chat")
 def chat_page(request: Request):
-    user = current_user(request)
+    token = request.cookies.get("session_token")
+    user = get_user_by_session_token(token)
+
+    if not user:
+        return RedirectResponse("/login", status_code=302)
 
     if user["is_admin"]:
         return RedirectResponse("/admin")
@@ -640,7 +644,15 @@ def chat_page(request: Request):
 
 @app.get("/admin")
 def admin_page(request: Request):
-    current_admin(request)
+    token = request.cookies.get("session_token")
+    user = get_user_by_session_token(token)
+
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    if not user["is_admin"]:
+        return RedirectResponse("/chat", status_code=302)
+
     return FileResponse(STATIC_DIR / "admin.html")
 
 

@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.gitignore
+*.zip
+run_*.bat
+run_*.sh
+README.txt
+README_SYNOLOGY.txt
+data/*
+!data/.keep

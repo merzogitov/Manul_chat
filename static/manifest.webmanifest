@@ -2,7 +2,7 @@
   "name": "Манул Чат",
   "short_name": "Манул Чат",
   "description": "Приватный веб-мессенджер Манул Чат",
-  "start_url": "/chat",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
