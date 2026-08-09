@@ -1,10 +1,46 @@
+# 🐱 Манул Чат
+
+Простой приватный веб-мессенджер на Python / FastAPI.
+
+<p align="center">
+  <img src="static/image/logo_max.png" width="350">
+</p>
+
+## Скриншоты
+
+### Вход
+
+<p align="center">
+  <img src="screenshot/003.png" width="500">
+</p>
+
+### Интерфейс на ПК
+
+<p align="center">
+  <img src="screenshot/001.png" width="800">
+</p>
+
+### Интерфейс на ПК
+
+<p align="center">
+  <img src="screenshot/002.png" width="800">
+</p>
+
+
+### Интерфейс на телефоне
+
+<p align="center">
+  <img src="screenshot/004.jpg" width="300">
+</p>
+
+
 
 
 ## Скриншоты
 
 ### Авторизация
 
-![Окно авторизации](screenshot/001.png)
+![Окно авторизации](screenshot/003.png)
 
 ### Чат на компьютере
 
