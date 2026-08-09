@@ -244,6 +244,55 @@
             }
         }
 
+
+        /* ====================================================
+           Desktop message width fix
+           Не сжимаем фразы по пробелам до min-content.
+           ==================================================== */
+        @media (min-width: 701px) {
+            .message-row {
+                width: 100% !important;
+                max-width: 100% !important;
+                justify-content: flex-start !important;
+            }
+
+            .message-row.mine-row {
+                justify-content: flex-end !important;
+                margin-left: 0 !important;
+            }
+
+            .message-row .message {
+                flex: 0 1 auto !important;
+                width: max-content !important;
+                max-width: calc(70% - 27px) !important;
+            }
+
+            .message-text {
+                white-space: pre-wrap !important;
+                overflow-wrap: break-word !important;
+                word-break: normal !important;
+            }
+        }
+
+        #pushButton {
+            white-space: nowrap;
+        }
+
+        @media (max-width: 700px) {
+            #pushButton {
+                font-size: 0;
+                width: 34px;
+                min-width: 34px;
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            #pushButton::before {
+                content: "🔔";
+                font-size: 15px;
+            }
+        }
+
     </style>
 
     <link rel="manifest" href="/manifest.webmanifest?v=20260809-pwa1">
@@ -273,6 +322,15 @@
 
     <div class="topbar-user">
         <span id="myName"></span>
+
+        <button
+            id="pushButton"
+            type="button"
+            onclick="togglePushNotifications()"
+            title="Push-уведомления"
+        >
+            🔔 Уведомления
+        </button>
 
         <button onclick="logout()">
             Выйти
@@ -1452,7 +1510,241 @@ async function clearChat() {
 }
 
 
+
+function urlBase64ToUint8Array(base64String) {
+    const padding =
+        "=".repeat(
+            (4 - base64String.length % 4) % 4
+        );
+
+    const base64 =
+        (base64String + padding)
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+
+    const rawData =
+        window.atob(base64);
+
+    return Uint8Array.from(
+        [...rawData].map(
+            char => char.charCodeAt(0)
+        )
+    );
+}
+
+
+async function updatePushButton() {
+    const button =
+        document.getElementById(
+            "pushButton"
+        );
+
+    if (!button) {
+        return;
+    }
+
+    if (
+        !("serviceWorker" in navigator)
+        || !("PushManager" in window)
+        || !("Notification" in window)
+    ) {
+        button.textContent =
+            "🔕 Push не поддерживается";
+        button.disabled = true;
+        return;
+    }
+
+    if (
+        Notification.permission
+        === "denied"
+    ) {
+        button.textContent =
+            "🔕 Уведомления запрещены";
+        return;
+    }
+
+    try {
+        const registration =
+            await navigator.serviceWorker.ready;
+
+        const subscription =
+            await registration.pushManager
+                .getSubscription();
+
+        button.textContent =
+            subscription
+                ? "🔔 Уведомления: вкл"
+                : "🔔 Уведомления";
+    } catch (error) {
+        console.error(
+            "Push status error:",
+            error
+        );
+    }
+}
+
+
+async function togglePushNotifications() {
+    if (
+        !("serviceWorker" in navigator)
+        || !("PushManager" in window)
+        || !("Notification" in window)
+    ) {
+        alert(
+            "Этот браузер не поддерживает push-уведомления."
+        );
+        return;
+    }
+
+    try {
+        const registration =
+            await navigator.serviceWorker.ready;
+
+        let subscription =
+            await registration.pushManager
+                .getSubscription();
+
+        if (subscription) {
+            await fetch(
+                "/api/push/unsubscribe",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body: JSON.stringify(
+                        subscription.toJSON()
+                    )
+                }
+            );
+
+            await subscription.unsubscribe();
+
+            await updatePushButton();
+            return;
+        }
+
+        const permission =
+            await Notification
+                .requestPermission();
+
+        if (permission !== "granted") {
+            await updatePushButton();
+            return;
+        }
+
+        const response =
+            await fetch(
+                "/api/push/public-key"
+            );
+
+        if (!response.ok) {
+            throw new Error(
+                "Не удалось получить VAPID key"
+            );
+        }
+
+        const data =
+            await response.json();
+
+        subscription =
+            await registration.pushManager
+                .subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey:
+                        urlBase64ToUint8Array(
+                            data.public_key
+                        )
+                });
+
+        const saveResponse =
+            await fetch(
+                "/api/push/subscribe",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body: JSON.stringify(
+                        subscription.toJSON()
+                    )
+                }
+            );
+
+        if (!saveResponse.ok) {
+            await subscription.unsubscribe();
+
+            throw new Error(
+                "Сервер не сохранил push-подписку"
+            );
+        }
+
+        await updatePushButton();
+
+    } catch (error) {
+        console.error(
+            "Push subscribe error:",
+            error
+        );
+
+        alert(
+            "Не удалось включить уведомления. "
+            + "Подробности смотрите в консоли браузера."
+        );
+    }
+}
+
+
+async function removeCurrentPushSubscription() {
+    if (
+        !("serviceWorker" in navigator)
+        || !("PushManager" in window)
+    ) {
+        return;
+    }
+
+    try {
+        const registration =
+            await navigator.serviceWorker.ready;
+
+        const subscription =
+            await registration.pushManager
+                .getSubscription();
+
+        if (!subscription) {
+            return;
+        }
+
+        await fetch(
+            "/api/push/unsubscribe",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                body: JSON.stringify(
+                    subscription.toJSON()
+                )
+            }
+        );
+
+        await subscription.unsubscribe();
+
+    } catch (error) {
+        console.error(
+            "Push unsubscribe error:",
+            error
+        );
+    }
+}
+
+
 async function logout() {
+    await removeCurrentPushSubscription();
+
     await fetch(
         "/api/logout",
         {
@@ -1465,6 +1757,7 @@ async function logout() {
 }
 
 init();
+updatePushButton();
 </script>
 
 
@@ -1472,7 +1765,7 @@ init();
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
         navigator.serviceWorker
-            .register("/service-worker.js?v=20260809-pwa1")
+            .register("/service-worker.js?v=20260809-push1")
             .catch(error => {
                 console.error("Service Worker registration failed:", error);
             });

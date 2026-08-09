@@ -1,4 +1,7 @@
 import os
+import asyncio
+import base64
+import json
 import re
 import sqlite3
 import secrets
@@ -7,6 +10,7 @@ import uuid
 
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import (
     FastAPI,
@@ -26,6 +30,11 @@ from pwdlib import PasswordHash
 
 import uvicorn
 
+from pywebpush import webpush, WebPushException
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+
+
 
 # ============================================================
 # Пути
@@ -36,6 +45,7 @@ STATIC_DIR = BASE_DIR / "static"
 DATA_DIR = BASE_DIR / "data"
 UPLOAD_DIR = DATA_DIR / "uploads"
 DB_FILE = DATA_DIR / "messenger.db"
+VAPID_PRIVATE_KEY_FILE = DATA_DIR / "vapid_private.pem"
 
 DATA_DIR.mkdir(exist_ok=True)
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -47,6 +57,8 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 SESSION_DAYS = 14
 MAX_FILE_SIZE = 20 * 1024 * 1024
+
+VAPID_SUBJECT = os.getenv("VAPID_SUBJECT", "mailto:admin@example.com").strip() or "mailto:admin@example.com"
 
 # Режим запуска:
 # development - локальное тестирование по HTTP
@@ -72,7 +84,7 @@ ALLOWED_IMAGE_TYPES = {
 
 password_hash = PasswordHash.recommended()
 
-APP_VERSION = "2026.08.09-pwa-stage1-fix1"
+APP_VERSION = "2026.08.09-pwa-push1"
 
 app = FastAPI()
 
@@ -164,6 +176,190 @@ def token_hash(token: str):
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
+
+# ============================================================
+# Web Push / VAPID
+# ============================================================
+
+def ensure_vapid_private_key():
+    if VAPID_PRIVATE_KEY_FILE.exists():
+        return
+
+    private_key = ec.generate_private_key(ec.SECP256R1())
+
+    pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption()
+    )
+
+    VAPID_PRIVATE_KEY_FILE.write_bytes(pem)
+
+    try:
+        os.chmod(VAPID_PRIVATE_KEY_FILE, 0o600)
+    except OSError:
+        pass
+
+
+def vapid_public_key():
+    ensure_vapid_private_key()
+
+    private_key = serialization.load_pem_private_key(
+        VAPID_PRIVATE_KEY_FILE.read_bytes(),
+        password=None
+    )
+
+    raw = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.X962,
+        format=serialization.PublicFormat.UncompressedPoint
+    )
+
+    return (
+        base64.urlsafe_b64encode(raw)
+        .rstrip(b"=")
+        .decode("ascii")
+    )
+
+
+def valid_push_endpoint(endpoint: str):
+    try:
+        parsed = urlparse(endpoint)
+    except Exception:
+        return False
+
+    if parsed.scheme != "https" or not parsed.hostname:
+        return False
+
+    host = parsed.hostname.lower()
+
+    allowed_hosts = (
+        "fcm.googleapis.com",
+        "updates.push.services.mozilla.com",
+        "web.push.apple.com",
+    )
+
+    allowed_suffixes = (
+        ".googleapis.com",
+        ".services.mozilla.com",
+        ".push.apple.com",
+        ".notify.windows.com",
+    )
+
+    return (
+        host in allowed_hosts
+        or any(host.endswith(suffix) for suffix in allowed_suffixes)
+    )
+
+
+def delete_push_subscription(endpoint: str):
+    with db() as con:
+        con.execute(
+            "DELETE FROM push_subscriptions WHERE endpoint = ?",
+            (endpoint,)
+        )
+
+
+def push_subscriptions_for_user(user_id: int):
+    with db() as con:
+        rows = con.execute("""
+            SELECT
+                endpoint,
+                p256dh,
+                auth
+            FROM push_subscriptions
+            WHERE user_id = ?
+        """, (user_id,)).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+def send_push_sync(user_id: int, payload: dict):
+    subscriptions = push_subscriptions_for_user(user_id)
+
+    if not subscriptions:
+        return
+
+    body = json.dumps(
+        payload,
+        ensure_ascii=False,
+        separators=(",", ":")
+    )
+
+    for item in subscriptions:
+        endpoint = item["endpoint"]
+
+        subscription_info = {
+            "endpoint": endpoint,
+            "keys": {
+                "p256dh": item["p256dh"],
+                "auth": item["auth"],
+            }
+        }
+
+        try:
+            webpush(
+                subscription_info=subscription_info,
+                data=body,
+                vapid_private_key=str(VAPID_PRIVATE_KEY_FILE),
+                vapid_claims={
+                    "sub": VAPID_SUBJECT
+                },
+                ttl=86400,
+                timeout=10
+            )
+        except WebPushException as exc:
+            status = (
+                exc.response.status_code
+                if exc.response is not None
+                else None
+            )
+
+            # 404/410 = подписка больше не существует.
+            if status in (404, 410):
+                delete_push_subscription(endpoint)
+            else:
+                print(
+                    "Web Push error:",
+                    status,
+                    repr(exc)
+                )
+        except Exception as exc:
+            print("Web Push error:", repr(exc))
+
+
+async def send_push_to_user(
+    user_id: int,
+    *,
+    message_id: int,
+    sender_id: int,
+    sender_name: str,
+    text: str = "",
+    has_image: bool = False
+):
+    body = (text or "").strip()
+
+    if not body and has_image:
+        body = "🖼 Изображение"
+
+    if len(body) > 180:
+        body = body[:177] + "..."
+
+    payload = {
+        "title": f"Манул Чат — {sender_name}",
+        "body": body or "Новое сообщение",
+        "url": "/chat",
+        "tag": f"message-{message_id}",
+        "sender_id": sender_id,
+        "message_id": message_id,
+    }
+
+    await asyncio.to_thread(
+        send_push_sync,
+        user_id,
+        payload
+    )
+
+
 # ============================================================
 # База данных
 # ============================================================
@@ -244,6 +440,26 @@ def init_db():
                 FOREIGN KEY(user_id) REFERENCES users(id),
                 FOREIGN KEY(peer_id) REFERENCES users(id)
             )
+        """)
+
+
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                session_token_hash TEXT NOT NULL,
+                endpoint TEXT UNIQUE NOT NULL,
+                p256dh TEXT NOT NULL,
+                auth TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+        """)
+
+        con.execute("""
+            CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user
+            ON push_subscriptions(user_id)
         """)
 
         con.execute("""
@@ -352,6 +568,7 @@ def cleanup_expired_sessions():
         ))
 
 
+ensure_vapid_private_key()
 init_db()
 cleanup_expired_sessions()
 create_initial_admin()
@@ -727,11 +944,18 @@ def logout(request: Request, response: Response):
     token = request.cookies.get("session_token")
 
     if token:
+        hashed_token = token_hash(token)
+
         with db() as con:
+            con.execute("""
+                DELETE FROM push_subscriptions
+                WHERE session_token_hash = ?
+            """, (hashed_token,))
+
             con.execute("""
                 DELETE FROM sessions
                 WHERE token_hash = ?
-            """, (token_hash(token),))
+            """, (hashed_token,))
 
     response.delete_cookie(
         "session_token",
@@ -755,6 +979,108 @@ def me(request: Request):
         "display_name": user["display_name"],
         "is_admin": bool(user["is_admin"])
     }
+
+
+
+# ============================================================
+# Push-уведомления
+# ============================================================
+
+class PushKeys(BaseModel):
+    p256dh: str
+    auth: str
+
+
+class PushSubscriptionData(BaseModel):
+    endpoint: str
+    keys: PushKeys
+
+
+@app.get("/api/push/public-key")
+def push_public_key(request: Request):
+    current_user(request)
+    return {
+        "public_key": vapid_public_key()
+    }
+
+
+@app.post("/api/push/subscribe")
+def push_subscribe(
+    data: PushSubscriptionData,
+    request: Request
+):
+    user = current_user(request)
+
+    if user["is_admin"]:
+        raise HTTPException(403)
+
+    endpoint = data.endpoint.strip()
+
+    if not valid_push_endpoint(endpoint):
+        raise HTTPException(
+            400,
+            "Недопустимый адрес push-сервиса"
+        )
+
+    token = request.cookies.get("session_token")
+
+    if not token:
+        raise HTTPException(401)
+
+    created = now_string()
+
+    with db() as con:
+        con.execute("""
+            INSERT INTO push_subscriptions
+            (
+                user_id,
+                session_token_hash,
+                endpoint,
+                p256dh,
+                auth,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(endpoint) DO UPDATE SET
+                user_id = excluded.user_id,
+                session_token_hash = excluded.session_token_hash,
+                p256dh = excluded.p256dh,
+                auth = excluded.auth,
+                updated_at = excluded.updated_at
+        """, (
+            user["id"],
+            token_hash(token),
+            endpoint,
+            data.keys.p256dh,
+            data.keys.auth,
+            created,
+            created
+        ))
+
+    return {"ok": True}
+
+
+@app.post("/api/push/unsubscribe")
+def push_unsubscribe(
+    data: PushSubscriptionData,
+    request: Request
+):
+    user = current_user(request)
+
+    with db() as con:
+        con.execute("""
+            DELETE FROM push_subscriptions
+            WHERE
+                user_id = ?
+                AND endpoint = ?
+        """, (
+            user["id"],
+            data.endpoint.strip()
+        ))
+
+    return {"ok": True}
+
 
 
 # ============================================================
@@ -1237,6 +1563,14 @@ async def upload_image(
     await send_to_user(receiver_id, receiver_data)
     await send_to_user(user["id"], sender_data)
 
+    await send_push_to_user(
+        receiver_id,
+        message_id=message_id,
+        sender_id=user["id"],
+        sender_name=user["display_name"],
+        has_image=True
+    )
+
     return sender_data
 
 
@@ -1419,6 +1753,14 @@ async def websocket_endpoint(websocket: WebSocket):
 
             await send_to_user(receiver_id, receiver_data)
             await send_to_user(user_id, sender_data)
+
+            await send_push_to_user(
+                receiver_id,
+                message_id=message_id,
+                sender_id=user_id,
+                sender_name=user["display_name"],
+                text=text
+            )
 
     except WebSocketDisconnect:
         pass

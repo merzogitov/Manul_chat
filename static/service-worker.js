@@ -1,4 +1,4 @@
-const CACHE_NAME = "manul-chat-pwa-v1";
+const CACHE_NAME = "manul-chat-pwa-push1";
 
 const STATIC_ASSETS = [
   "/static/style.css?v=20260809-prod1",
@@ -61,4 +61,89 @@ self.addEventListener("fetch", event => {
       })
     );
   }
+});
+
+
+self.addEventListener("push", event => {
+  let data = {};
+
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (error) {
+    data = {
+      title: "Манул Чат",
+      body: event.data ? event.data.text() : "Новое сообщение",
+      url: "/chat"
+    };
+  }
+
+  event.waitUntil(
+    self.clients
+      .matchAll({
+        type: "window",
+        includeUncontrolled: true
+      })
+      .then(clients => {
+        const hasVisibleClient = clients.some(
+          client => client.visibilityState === "visible"
+        );
+
+        // Если чат сейчас открыт и виден, WebSocket уже показывает сообщение.
+        if (hasVisibleClient) {
+          return;
+        }
+
+        return self.registration.showNotification(
+          data.title || "Манул Чат",
+          {
+            body: data.body || "Новое сообщение",
+            icon: "/static/image/pwa-192.png",
+            badge: "/static/image/pwa-192.png",
+            tag: data.tag || undefined,
+            data: {
+              url: data.url || "/chat",
+              sender_id: data.sender_id || null
+            }
+          }
+        );
+      })
+  );
+});
+
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+
+  const targetUrl =
+    event.notification.data
+    && event.notification.data.url
+      ? event.notification.data.url
+      : "/chat";
+
+  event.waitUntil(
+    self.clients
+      .matchAll({
+        type: "window",
+        includeUncontrolled: true
+      })
+      .then(async clients => {
+        for (const client of clients) {
+          if ("focus" in client) {
+            try {
+              if ("navigate" in client) {
+                await client.navigate(targetUrl);
+              }
+            } catch (error) {
+              // navigate может быть недоступен в отдельных браузерах.
+            }
+
+            return client.focus();
+          }
+        }
+
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl);
+        }
+      })
+  );
 });
